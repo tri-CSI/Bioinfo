@@ -1,0 +1,10 @@
+*.txt
+*.log
+*.bam
+*.vcf
+*.bai
+*.metrics.picard
+*.fastq
+*.fastq.gz
+*.fa.gz*
+GC*/
