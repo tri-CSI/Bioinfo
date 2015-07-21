@@ -1,10 +1,22 @@
 # this script 
-# combineCasesAndDirection.py
+# annotation.py
 # version 0.0.1
 # Author: Tran Minh Tri
+# Organization: CSI - CTRAD
 
-##Usage
-#python3 annotation.py (in the directory of interest)
+"""
+Usage:
+python3 annotation.py (in the directory of interest)
+
+Input file(s): 
+	*.toTranscriptome.out.bam
+Output file(s): 
+	step 1 (sort): *.toTranscriptome.sorted.bam
+	step 2 (anno): *_toTranscriptome_cov.txt
+Tool(s):
+	Sorting: samtools sort -f 
+	Annotation: bedtools genomecov -d
+"""
 
 
 import glob
