@@ -4,6 +4,10 @@ GTF.py
 Kamil Slowikowski
 December 24, 2013
 
+Changed by: Tran Minh Tri
+Org: CTRAD - CSI
+ver: 0.0.1
+
 Read GFF/GTF files. Works with gzip compressed files and pandas.
 
     http://useast.ensembl.org/info/website/upload/gff.html
@@ -26,23 +30,20 @@ R_KEYVALUE  = re.compile(r'(\s+|\s*=\s*)')
  
  
 def dataframe(filename):
-    """Open an optionally gzipped GTF file and return a pandas.DataFrame.
+    """ Return 2 dictionaries for GeneId -> Gene name and transcript_id -> (gene_id, gene_name)
     """
     # Each column is a list stored as a value in this dict.
     result = defaultdict(list)
- 
+    GeneIdDict = {}
+    TranScIdDict = {}
+	
     for i, line in enumerate(lines(filename)):
-        for key in line.keys():
-            # This key has not been seen yet, so set it to None for all
-            # previous lines.
-            if key not in result:
-                result[key] = [None] * i
- 
-        # Ensure this row has some value for each column.
-        for key in result.keys():
-            result[key].append(line.get(key, None))
- 
-    return pd.DataFrame(result)
+        for key in line:
+            if key == "transcript_id" and not key in TranScIdDict:
+                TranScIdDict[line[key]] = (line["gene_id"], line["gene_name"])
+            if key == "gene_id" and not key in GeneIdDict:
+                GeneIdDict[line[key]] = line["gene_name"] 
+    return (GeneIdDict, TranScIdDict)
  
  
 def lines(filename):
