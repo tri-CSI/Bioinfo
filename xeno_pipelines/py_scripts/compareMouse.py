@@ -31,21 +31,22 @@ def main(args):
 	acgt['T'] = ['T', 't', 'N', 'K', 'Y', 'W', 'B', 'H', 'D']
 	varList = {}
 
-	file_hu = os.path.basename(getattr(args, "human"))
-	file_ms = os.path.basename(getattr(args, "mouse"))    
-	outfile = os.path.basename(getattr(args, "extracted")) 
+	file_hu = getattr(args, "human")
+	file_ms = getattr(args, "mouse")    
+	outfile = getattr(args, "extracted") 
 	counter = 0
 
 	with open(file_ms, "r") as mseVar:
 		for line in mseVar:
 			counter += 1
 			[chrm, start, end, varId] = line.strip().split()
-			command = "samtools faidx " + os.path.basename(getattr(args, "mse_genome"))
+			command = "samtools faidx " + getattr(args, "mse_genome")
 			command += " " + chrm + ":" + start + "-" + start
 			try:
 				varList[varId] = sp.getoutput(command).split()[1]
 			except:
 				pass
+			# print(command) # debug
 			if counter % 10000 == 0:
 				print(counter, "bases looked up")
 		print(counter, "bases looked up")
@@ -70,6 +71,7 @@ def main(args):
 							if varList[varId] in acgt[var]:
 								sameBase = True
 						except: pass
+						# print(var,varList[varId]) # debug
 
 				if sameBase:
 					tokens[2] = 'M:' + varList[varId]

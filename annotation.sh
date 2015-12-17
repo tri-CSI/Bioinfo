@@ -1,17 +1,21 @@
 #!/bin/bash
 # set -o history -o histexpand
 
-# Pipeline for extracting variants from vcf files.
+# Pipeline to annotate VCF files
 # Developed by Tran Minh Tri
-# Date: 28 May 2015
+# Date: 26 May 2015
 
-if [ $# < 1 ] || [[ "$@" != *vcf ]]; then
-  echo "Usage: $0"
+if [ $# < 1 ] || [[ "$@" != *vcf* ]]; then
+  echo "Usage: $0 <forward_strand_in_fastq> <reverse_strand_in_fastq>"
   exit
 fi
 
-echo Files: $@
-LOG_FILE="$(date +%s).varEX.log"
+# Tools
+VEP="/12TBLVM/biotools/ensembl-tools-release-75/scripts/variant_effect_predictor/variant_effect_predictor.pl"
+
+LOG_FILE="$(date +%s).anno.log"
+RG="@RG\tID:{0}\tLB:Nextera_Rapid_Capture_Enrichment\tPL:ILLUMINA-NextSeq500\tPU:@NS500768\tSM:${BASE_NAME}\tCN:CTRAD-CSI_Singapore\tDS:NIL\tDT:20150519"
+
 start_time=$(date +%s)
 last_time=$(date +%s)
 
@@ -62,12 +66,22 @@ do
 # File names
 VCF="$file"
 BASE_NAME=`expr match "$file" '\([^.]*\)'`
-EXTRACTED="${BASE_NAME}_np.VAR_extracted.txt"
+PASS_EXTRACTED="${BASE_NAME}.PASS_extracted.vcf"
+VEP_ANNO="${BASE_NAME}.VEP_anno.vcf"
+CHOOSESTRAND="${BASE_NAME}.choosestrand.vcf"
+ANNOTATED="${BASE_NAME}.annotated.vcf"
 
-command="awk -F $'\t' '\$1 !~ /#/ { print \$1,\$2,\$5 }' $VCF > $EXTRACTED"
-run "$command" "$EXTRACTED"
+command="awk '{if ((\$1~/#/) || ((\$7~/PASS/))) print }' $VCF > $PASS_EXTRACTED"
+run "$command" "$PASS_EXTRACTED"
 
-echo `wc -l $EXTRACTED` >> ${LOG_FILE}
+command="perl $VEP -i $PASS_EXTRACTED -o $VEP_ANNO --cache --vcf --verbose --everything --fork 30 --total_length --maf_1kg --check_existing --allele_number --check_svs --buffer_size 100000 --dir /12TBLVM/Data/VEP75cache"
+run "$command" "$VEP_ANNO"
+
+command="python3 /12TBLVM/Data/MyScriptsOpen/choose_strand_vcf08.py $VEP_ANNO $CHOOSESTRAND"
+run "$command" "$CHOOSESTRAND"
+
+command="python3 /12TBLVM/Data/MyScriptsOpen/divideExistingVarsIntoColumns03.py $CHOOSESTRAND $ANNOTATED"
+run "$command" "$ANNOTATED"
 
 done
 # -------------------------------------------------------

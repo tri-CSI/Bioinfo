@@ -1,23 +1,34 @@
 #!/bin/bash
+# set -o history -o histexpand
 
-# Pipeline for xenograft analysis
-# version 1.0.1
+# Pipeline for xenograft following ILLUMINA-Basespace alignment
+# version 0.4.1
 # Developed by Tran Minh Tri
-# Date: 19 October 2015
+# Date: 30 June 2015
 
-# Usage:
-#     1. Copy xenograft.config file to run folder
-#     2. Open xenograft.config, change paths to programs (BWA, samtools, GATK...)
-#     3. Make sure fastq files have the following format: CASE_NAME-metainfo.fastq.gz or .fastq; CASE_NAME will be used to name output files.
-#     4. Run pipeline by typing 
-#           bash script_name.sh <forward_strand_fastq> <reverse_strand_fastq>
-#     5. A subfolder to run directory will be made, named CASE_NAME
-
-# checking input fastq names
 if [ $# -ne 2 ] || [[ "$1" != *fastq* ]] || [[ "$2" != *fastq* ]]; then
   echo "Usage: $0 <forward_strand_in_fastq> <reverse_strand_in_fastq>"
   exit
 fi
+
+# Tools
+BWA="/12TBLVM/biotools/bwa-0.7.7/bwa"
+SAMTOOLS_0p1="/12TBLVM/biotools/samtools/samtools"
+SAMTOOLS="samtools"
+LIFTOVER="/12TBLVM/Data/MinhTri/8_XENOGRAFT_2/liftOver"
+PICARD="java -jar /12TBLVM/biotools/picard-tools-1.101/picard-tools-1.101/"
+GATK="/12TBLVM/biotools/GenomeAnalysisTK-3.3-0/GenomeAnalysisTK.jar"
+GATK_TO_GVCF="/12TBLVM/biotools/gvcftools-0.16/bin/gatk_to_gvcf"
+VEP="/12TBLVM/biotools/VEP79/ensembl-tools-release-79/scripts/variant_effect_predictor/variant_effect_predictor.pl"
+VEP_STRANDSELECTOR="python3 /12TBLVM/Data/MyScriptsOpen/VEPAnnotationSelector_1.1.9.py" 
+VEP_FORMATTOR="python3 /12TBLVM/Data/MinhTri/8_XENOGRAFT_2/VAS_Formatter_1.0.5.py"
+COMPARE_MSE="python3 /12TBLVM/Data/MinhTri/8_XENOGRAFT_2/compareMouse.py"
+
+# Database
+HG19="/12TBLVM/Data/hg19-2/hg19_1toM/hg19_1toM.fa"
+BALB_CJ="/12TBLVM/Data/MinhTri/8_XENOGRAFT_2/BALB_cJ.chromosome.fa"
+TARGET_REGIONS="/NextSeqVol/NexteraRapidCapture_Exome_TargetedRegions_v1.2Used.bed"
+LO_HG38_MM10="/12TBLVM/Data/MinhTri/8_XENOGRAFT_2/hg19ToMm10.over.chain.gz"
 
 # Get input file name info
 STRAND_1=`readlink $1`
@@ -31,14 +42,67 @@ curdir=`pwd`
 
 LOG_FILE="${BASE_NAME}.$(date +%s).trinome.log"
 
-# Load necessary tools and functions
-source loxeno.config
+# File names 
+
+HU_SORTED="${BASE_NAME}.sorted" 
+HU_METRICS_FILE="${BASE_NAME}.metrics.picard"
+HU_BAMFILE="${BASE_NAME}.bam" 
+HU_UNALNED="${BASE_NAME}_unaligned.bam"
+ALL_VARIANTS="${BASE_NAME}.all_variants.vcf"
+QUAL_FILTERED="${BASE_NAME}.qual_filtered.vcf"
+PASS_EXTRACTED="${BASE_NAME}.PASS_extracted.vcf"
+VEP_ANNO="${BASE_NAME}.annotated.vcf"
+VEP_CHOOSESTRAND="${BASE_NAME}.choosestrand.txt"
+VEP_FORMATTED="${BASE_NAME}.formatted.txt"
+VAR_LIST="${BASE_NAME}.var_list.bed"
+MSE_VAR_LIST="${BASE_NAME}.mse_varlist.bed"
+UNMAPPED="${BASE_NAME}.unmapped_varList.bed"
+ALLVAR_LIST="${BASE_NAME}_allVariants.txt"
+ASNMAF_LIST="${BASE_NAME}_asn_maf.txt"
+
+# Read groups
+RG="@RG\tID:{0}\tLB:Nextera_Rapid_Capture_Enrichment\tPL:ILLUMINA-NextSeq500\tPU:@NS500768\tSM:${BASE_NAME}\tCN:CTRAD-CSI_Singapore\tDS:NIL\tDT:20150519"
+
+# Functions
+start_time=$(date +%s)
+last_time=$(date +%s)
+
+function getTime () {
+hours=$[ $1 / 3600 ]
+minutes=$[ $[$1 % 3600] / 60]
+seconds=$[ $[$1 % 3600] % 60]
+echo "${hours}:${minutes}:${seconds}"
+}
+
+function run () {
+echo >> ${LOG_FILE}
+
+echo "-+- PROCESS -+- : $1" >> ${LOG_FILE}
+echo " + Proc start on $(date)" >> ${LOG_FILE}
+eval $1
+
+if [ $? -eq 0 ]; then
+	echo " + File created : $2" >> ${LOG_FILE}
+else
+	echo " + Process fails with status $?" >> ${LOG_FILE}
+	echo >> $LOG_FILE
+	echo "Script exits on $(date)" >> ${LOG_FILE}
+	exit
+fi
+
+time_elapsed=$[ `date +%s` - $last_time ]
+last_time=$(date +%s)
+echo " + Proc runtime : $(getTime $time_elapsed)" >> ${LOG_FILE}
+
+time_elapsed=$[ `date +%s` - $start_time ]
+echo " + Time elapsed : $(getTime $time_elapsed)" >> ${LOG_FILE}
+}
 
 # -------------------------------------------------------
-# HEADER of LOG_FILE
+# HEADER
 # -------------------------------------------------------
-echo "******************XENOGRAFT PIPELINE********************" > $LOG_FILE
-echo "Start dtime : `date`" >> $LOG_FILE
+echo "*********************************************************" > $LOG_FILE
+echo "*** Starting pipeline on `date` ***" >> $LOG_FILE
 echo "Script name : $0" >> $LOG_FILE
 echo "Current dir : $curdir" >> $LOG_FILE
 echo "Log file at : $LOG_FILE" | tee -a $LOG_FILE
@@ -47,7 +111,7 @@ echo "*********************************************************" >> $LOG_FILE
 # -------------------------------------------------------
 # BWA alignment to human:
 # -------------------------------------------------------
-command="$BWA mem -Mt25 -R '$RG' $HG19 $STRAND_1 $STRAND_2 | samtools view -@ 25 -Sb - > $HU_BAMFILE"
+command="$BWA mem -M -v -t25 -R '$RG' $HG19 $STRAND_1 $STRAND_2 | samtools view -@ 25 -Sb - > $HU_BAMFILE"
 run "$command" $HU_BAMFILE
 
 command="$SAMTOOLS sort -@ 25 $HU_BAMFILE $HU_SORTED"
@@ -84,17 +148,7 @@ command="${PICARD}MarkDuplicates.jar I=${HU_SORTED}.bam O=$HU_BAMFILE METRICS_FI
 run "$command" $HU_BAMFILE
 
 command="$SAMTOOLS index $HU_BAMFILE"
-run "$command" ${HU_BAMFILE}.bai
-
-# ------------ QC --------------
-command="$SAMSTAT $HU_BAMFILE"
-run "$command" ${HU_BAMFILE}.samstat.html
-
-mkdir qc
-mv ${HU_BAMFILE}.samstat.html qc
-
-command="$FASTQC $STRAND_1 $STRAND_2 -o qc"
-run "$command" "fastqc files"
+run "$command" "A bunch of Samtools index files"
 
 # -------------------------------------------------------
 # Variant calling and annotation
@@ -130,39 +184,10 @@ run "$command" $ALLVAR_LIST
 command="awk -F $'\t' '\$1~/#/ || \$67 < 0.05 {print }' $ALLVAR_LIST > $ASNMAF_LIST"
 run "$command" $ASNMAF_LIST
 
-echo -e "Variant count report \t$BASE_NAME" > $VAR_REPORT
-
-echo >> $VAR_REPORT
-echo Unfiltered variants >> $VAR_REPORT
-echo >> $VAR_REPORT
-allvar=`awk -F '\t' '$1!~/#/' $ALLVAR_LIST | wc -l`
-human=`awk -F '\t' '$3~/H/' $ALLVAR_LIST | wc -l`
-mouse=`awk -F '\t' '$3~/M/' $ALLVAR_LIST | wc -l`
-mouse_percent=`bc <<< "scale=2; $mouse * 100 / $allvar"`
-echo -e "All variants:\t$allvar" >> $VAR_REPORT
-echo -e "Human unambiguous:\t$human" >> $VAR_REPORT
-echo -e "Possibly mouse:\t$mouse" >> $VAR_REPORT
-echo -e "Pos. mouse \(%\):\t$mouse_percent" >> $VAR_REPORT
-
-echo >> $VAR_REPORT
-echo EAS_MAF \< 0.05 >> $VAR_REPORT
-echo >> $VAR_REPORT
-allvar=`awk -F '\t' '$1!~/#/' $ASNMAF_LIST | wc -l`
-human=`awk -F '\t' '$3~/H/' $ASNMAF_LIST | wc -l`
-mouse=`awk -F '\t' '$3~/M/' $ASNMAF_LIST | wc -l`
-mouse_percent=`bc <<< "scale=2; $mouse * 100 / $allvar"`
-echo -e "All variants:\t$allvar" >> $VAR_REPORT
-echo -e "Human unambiguous:\t$human" >> $VAR_REPORT
-echo -e "Possibly mouse:\t$mouse" >> $VAR_REPORT
-echo -e "Pos. mouse \(%\):\t$mouse_percent" >> $VAR_REPORT
-
-
 # -------------------------------------------------------
 # FOOTER
 # -------------------------------------------------------
-time_total
 echo >> ${LOG_FILE}
 echo "*****************************************************" >> $LOG_FILE
 echo "*** Pipeline ends at `date` ***" >> $LOG_FILE
 echo "*****************************************************" >> $LOG_FILE
-cd ..

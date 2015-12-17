@@ -1,17 +1,28 @@
 #!/bin/bash
 # set -o history -o histexpand
 
-# Pipeline for extracting variants from vcf files.
-# Developed by Tran Minh Tri
-# Date: 28 May 2015
+"""
+Pipeline to: 
+	1. Filter ASN_MAF info from annotated files
+	2. Count number of variants in original files and filtered files
+Tools:
+	1. awk extract reads where ASN_MAF < 0.05 (column 49)
+	
+Developed by Tran Minh Tri
+Date: 22 July 2015
+Changed: 6 Aug 2015: regex
+"""
 
-if [ $# < 1 ] || [[ "$@" != *vcf ]]; then
-  echo "Usage: $0"
+if [ $# < 1 ] || [[ "$@" != *.txt ]]; then
+  echo "Usage: $0 <filenames>"
   exit
 fi
 
-echo Files: $@
-LOG_FILE="$(date +%s).varEX.log"
+echo $@
+# Tools
+LOG_FILE="$(date +%s).asn_maf.log"
+RESULT="result.asn_maf.log"
+
 start_time=$(date +%s)
 last_time=$(date +%s)
 
@@ -56,18 +67,25 @@ echo "*********************************************************" >> $LOG_FILE
 # -------------------------------------------------------
 # Extract PASS reads and annotate VCF file
 # -------------------------------------------------------
+echo "Result for analysis run on `date`:" > $RESULT
 
 for file in "$@"
 do
 # File names
 VCF="$file"
-BASE_NAME=`expr match "$file" '\([^.]*\)'`
-EXTRACTED="${BASE_NAME}_np.VAR_extracted.txt"
+BASE_NAME=`expr match "$file" '\(.*[1-9][^.]*\)'`
+EXTRACTED="${BASE_NAME}.asn_maf.txt"
 
-command="awk -F $'\t' '\$1 !~ /#/ { print \$1,\$2,\$5 }' $VCF > $EXTRACTED"
+echo >> $RESULT
+echo $file >> $RESULT
+
+command="awk -F $'\t' '{ nE = split(\$48,EAS,\"&\"); nS = split(\$50,SAS,\"&\"); for (i=1;i<=nE;i++) { split(EAS[i],var,\":\"); if (var[1] == \$5) eas=var[2] } ; for (i=1;i<=nS;i++) { split(SAS[i],var,\":\"); if (var[1] == \$5) sas=var[2] } ; if ((\$1~/#/) || ((eas < 0.05) && (sas < 0.05))) print }' $VCF > $EXTRACTED"
 run "$command" "$EXTRACTED"
 
-echo `wc -l $EXTRACTED` >> ${LOG_FILE}
+echo -n "Total variants: " >> $RESULT
+egrep -cv '#|^$' $VCF >> $RESULT
+echo -n "ASN_MAF < 0.05: " >> $RESULT
+egrep -cv '#|^$' $EXTRACTED >> $RESULT
 
 done
 # -------------------------------------------------------

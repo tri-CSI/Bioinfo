@@ -1,17 +1,30 @@
 #!/bin/bash
 # set -o history -o histexpand
 
-# Pipeline for extracting variants from vcf files.
-# Developed by Tran Minh Tri
-# Date: 28 May 2015
+"""
+Pipeline to: 
+	1. Count intersection and union of HH, HO files
+	2. Output Venn diagram info
+	3. Create union files
+Tools:
+	1. python script varList2
+Requirements:
+	1. Both HH and HO files in directory
+	
+Developed by Tran Minh Tri
+Date: 23 July 2015
+"""
 
-if [ $# < 1 ] || [[ "$@" != *vcf ]]; then
-  echo "Usage: $0"
+if [ $# < 1 ] || [[ "$@" != HH*.txt ]]; then
+  echo "Usage: $0 <HH filenames>"
   exit
 fi
 
-echo Files: $@
-LOG_FILE="$(date +%s).varEX.log"
+echo $@
+# Tools
+LOG_FILE="$(date +%s).interUnion.log"
+RESULT="result.interUnion.log"
+
 start_time=$(date +%s)
 last_time=$(date +%s)
 
@@ -28,7 +41,7 @@ echo "-+- PROCESS -+- : $1" >> ${LOG_FILE}
 echo " + Proc start on $(date)" >> ${LOG_FILE}
 eval $1
 if [ $? -eq 0 ]; then
-	echo " + File created : $2" >> ${LOG_FILE}
+	echo " + Proc completed successfully" >> ${LOG_FILE}
 else
 	echo " + Process fails with status $?" >> ${LOG_FILE}
 	echo >> $LOG_FILE
@@ -54,20 +67,22 @@ echo "Log file at : $LOG_FILE" | tee -a $LOG_FILE
 echo "*********************************************************" >> $LOG_FILE
 
 # -------------------------------------------------------
-# Extract PASS reads and annotate VCF file
+# 
 # -------------------------------------------------------
+echo "Result for analysis run on `date`:" > $RESULT
 
 for file in "$@"
 do
 # File names
-VCF="$file"
+HH="$file"
+HO="${file/HH/HO}"
 BASE_NAME=`expr match "$file" '\([^.]*\)'`
-EXTRACTED="${BASE_NAME}_np.VAR_extracted.txt"
 
-command="awk -F $'\t' '\$1 !~ /#/ { print \$1,\$2,\$5 }' $VCF > $EXTRACTED"
-run "$command" "$EXTRACTED"
+echo >> $RESULT
+echo ${file/HH_/>>> CASE: } >> $RESULT
 
-echo `wc -l $EXTRACTED` >> ${LOG_FILE}
+command="python3 /12TBLVM/Data/MinhTri/6_SCRIPTS/varList2.py --fileA $HH --fileB $HO >> $RESULT"
+run "$command"
 
 done
 # -------------------------------------------------------

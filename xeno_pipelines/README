@@ -1,0 +1,13 @@
+Pipeline for xenograft analysis
+version 1.0.1
+Developed by Tran Minh Tri
+Date: 22 October 2015
+
+Usage:
+    1. Copy loxeno.config file to run folder
+    2. Open loxeno.config, change paths to programs (BWA, samtools, GATK...)
+    3. Make sure fastq files have the following format: CASE_NAME-metainfo.fastq.gz or .fastq; CASE_NAME will be used to name output files.
+    4. Run pipeline by typing 
+          bash script_name.sh <forward_strand_fastq> <reverse_strand_fastq>
+    5. A subfolder to run directory will be made, named CASE_NAME
+

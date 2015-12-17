@@ -1,17 +1,22 @@
 #!/bin/bash
 # set -o history -o histexpand
 
-# Pipeline for extracting variants from vcf files.
+# Pipeline to extrct amino acid info from VCF files
 # Developed by Tran Minh Tri
-# Date: 28 May 2015
+# Date: 27 May 2015
 
 if [ $# < 1 ] || [[ "$@" != *vcf ]]; then
   echo "Usage: $0"
   exit
 fi
 
-echo Files: $@
-LOG_FILE="$(date +%s).varEX.log"
+echo $@
+# Tools
+VEP="/12TBLVM/biotools/ensembl-tools-release-75/scripts/variant_effect_predictor/variant_effect_predictor.pl"
+
+LOG_FILE="$(date +%s).aaa.log"
+RG="@RG\tID:{0}\tLB:Nextera_Rapid_Capture_Enrichment\tPL:ILLUMINA-NextSeq500\tPU:@NS500768\tSM:${BASE_NAME}\tCN:CTRAD-CSI_Singapore\tDS:NIL\tDT:20150519"
+
 start_time=$(date +%s)
 last_time=$(date +%s)
 
@@ -62,12 +67,27 @@ do
 # File names
 VCF="$file"
 BASE_NAME=`expr match "$file" '\([^.]*\)'`
-EXTRACTED="${BASE_NAME}_np.VAR_extracted.txt"
+EXTRACTED="${BASE_NAME}.aaa.txt"
 
-command="awk -F $'\t' '\$1 !~ /#/ { print \$1,\$2,\$5 }' $VCF > $EXTRACTED"
+command="awk -F $'\t' '\$37 ~ /HGNC/ && \$36 ~ /^TP53$/ { print \$1,\$2,\$36,\$52 }' $VCF > $EXTRACTED"
 run "$command" "$EXTRACTED"
 
-echo `wc -l $EXTRACTED` >> ${LOG_FILE}
+command="awk -F $'\t' '\$37 ~ /HGNC/ && \$36 ~ /^KRAS$/ { print \$1,\$2,\$36,\$52 }' $VCF >> $EXTRACTED"
+run "$command" "$EXTRACTED"
+
+command="awk -F $'\t' '\$37 ~ /HGNC/ && \$36 ~ /^ARID1A$/ { print \$1,\$2,\$36,\$52 }' $VCF >> $EXTRACTED"
+run "$command" "$EXTRACTED"
+
+command="awk -F $'\t' '\$37 ~ /HGNC/ && \$36 ~ /^FAT4$/ { print \$1,\$2,\$36,\$52 }' $VCF >> $EXTRACTED"
+run "$command" "$EXTRACTED"
+
+command="awk -F $'\t' '\$37 ~ /HGNC/ && \$36 ~ /^CDH1$/ { print \$1,\$2,\$36,\$52 }' $VCF >> $EXTRACTED"
+run "$command" "$EXTRACTED"
+
+command="awk -F $'\t' '\$37 ~ /HGNC/ && \$36 ~ /^PIK3A$/ { print \$1,\$2,\$36,\$52 }' $VCF >> $EXTRACTED"
+run "$command" "$EXTRACTED"
+
+echo `wc -l $EXTRACTED`
 
 done
 # -------------------------------------------------------
