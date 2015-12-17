@@ -1,0 +1,2 @@
+# Bioinfo
+bioinformatic scripts (LINUX)
