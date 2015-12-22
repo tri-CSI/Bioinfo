@@ -20,7 +20,7 @@ SAMTOOLS="samtools"
 PICARD="java -jar /12TBLVM/biotools/picard-tools-1.101/picard-tools-1.101/"
 GATK="/12TBLVM/biotools/GenomeAnalysisTK-3.3-0/GenomeAnalysisTK.jar"
 GATK_TO_GVCF="/12TBLVM/biotools/gvcftools-0.16/bin/gatk_to_gvcf"
-VEP="/12TBLVM/biotools/VEP79/ensembl-tools-releasej79/scripts/variant_effect_predictor/variant_effect_predictor.pl"
+VEP="/12TBLVM/biotools/VEP79/ensembl-tools-release-79/scripts/variant_effect_predictor/variant_effect_predictor.pl"
 VEP_STRANDSELECTOR="python3 /12TBLVM/Data/MyScriptsOpen/VEPAnnotationSelector_1.1.9.py" 
 VEP_FORMATTOR="python3 /12TBLVM/Data/MyScriptsOpen/VAS_Formatter_1.0.5.py"
 
@@ -29,14 +29,14 @@ HG19="/12TBLVM/Data/hg19-2/hg19_1toM/hg19_1toM.fa"
 TARGET_REGIONS="/NextSeqVol/NexteraRapidCapture_Exome_TargetedRegions_v1.2Used.bed"
 
 # Get input file name info
-STRAND_1=`readlink $1`
-STRAND_2=`readlink $2`
+STRAND_1=$1
+STRAND_2=$2
 bname=`basename $STRAND_1`
 BASE_NAME=`expr match "$bname" '\([^_]*\)'`
 
-mkdir -p $BASE_NAME
-cd $BASE_NAME
-curdir=`pwd`
+#mkdir -p $BASE_NAME
+#cd $BASE_NAME
+#curdir=`pwd`
 
 LOG_FILE="${BASE_NAME}.$(date +%s).trinome.log"
 
@@ -106,49 +106,49 @@ echo "*********************************************************" >> $LOG_FILE
 # -------------------------------------------------------
 # BWA alignment to human:
 # -------------------------------------------------------
-run "$BWA mem -M -t5 -R '$RG' $HG19 $STRAND_1 $STRAND_2 | samtools view -@ 5 -Sb - > $HU_BAMFILE"
-
-run "$SAMTOOLS sort -@ 5 $HU_BAMFILE $HU_SORTED"
-
-run "${PICARD}MarkDuplicates.jar I=${HU_SORTED}.bam O=$HU_BAMFILE METRICS_FILE=$HU_METRICS_FILE"
-
-run "$SAMTOOLS index $HU_BAMFILE"
-
-run "$SAMTOOLS view -bf 4 $HU_BAMFILE > $HU_UNALNED"
-
-for chromo in M 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y
-do
-	target_int="${BASE_NAME}_chr${chromo}.intervals"
-	realn_file="${BASE_NAME}_chr${chromo}_realigned.bam"
-	
-	run "java  -Djava.io.tmpdir=\"/tmp\" -Xmx100g -jar $GATK -T RealignerTargetCreator -R $HG19 -I $HU_BAMFILE -o $target_int -L chr${chromo}"
-	
-	run "java  -Djava.io.tmpdir=\"/tmp\" -Xmx100g -jar $GATK -T IndelRealigner -R $HG19 -I $HU_BAMFILE -targetIntervals $target_int -L chr${chromo} -o $realn_file"
-done
-	
-run "$SAMTOOLS cat ${BASE_NAME}_chr*_realigned.bam $HU_UNALNED -o $HU_BAMFILE && rm $HU_UNALNED ${BASE_NAME}_chr*"
-
-run "$SAMTOOLS sort -@ 5 $HU_BAMFILE $HU_SORTED"
-
-run "${PICARD}MarkDuplicates.jar I=${HU_SORTED}.bam O=$HU_BAMFILE METRICS_FILE=$HU_METRICS_FILE && rm ${HU_SORTED}.bam $HU_METRICS_FILE"
-
-run "$SAMTOOLS index $HU_BAMFILE"
+#run "$BWA mem -M -t25 -R '$RG' $HG19 $STRAND_1 $STRAND_2 | samtools view -@ 5 -Sb - > $HU_BAMFILE"
+#
+#run "$SAMTOOLS sort -@ 25 $HU_BAMFILE $HU_SORTED"
+#
+#run "${PICARD}MarkDuplicates.jar I=${HU_SORTED}.bam O=$HU_BAMFILE METRICS_FILE=$HU_METRICS_FILE"
+#
+#run "$SAMTOOLS index $HU_BAMFILE"
+#
+#run "$SAMTOOLS view -bf 4 $HU_BAMFILE > $HU_UNALNED"
+#
+#for chromo in M 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y
+#do
+#	target_int="${BASE_NAME}_chr${chromo}.intervals"
+#	realn_file="${BASE_NAME}_chr${chromo}_realigned.bam"
+#	
+#	run "java  -Djava.io.tmpdir=\"/tmp\" -Xmx100g -jar $GATK -T RealignerTargetCreator -R $HG19 -I $HU_BAMFILE -o $target_int -L chr${chromo}"
+#	
+#	run "java  -Djava.io.tmpdir=\"/tmp\" -Xmx100g -jar $GATK -T IndelRealigner -R $HG19 -I $HU_BAMFILE -targetIntervals $target_int -L chr${chromo} -o $realn_file"
+#done
+#	
+#run "$SAMTOOLS cat ${BASE_NAME}_chr*_realigned.bam $HU_UNALNED -o $HU_BAMFILE && rm $HU_UNALNED ${BASE_NAME}_chr*"
+#
+#run "$SAMTOOLS sort -@ 25 $HU_BAMFILE $HU_SORTED"
+#
+#run "${PICARD}MarkDuplicates.jar I=${HU_SORTED}.bam O=$HU_BAMFILE METRICS_FILE=$HU_METRICS_FILE && rm ${HU_SORTED}.bam $HU_METRICS_FILE"
+#
+#run "$SAMTOOLS index $HU_BAMFILE"
 
 # ------------ QC --------------
-run "$SAMSTAT $HU_BAMFILE"
-
-mkdir qc
-mv ${HU_BAMFILE}.samstat.html qc
+#run "$SAMSTAT $HU_BAMFILE"
+#
+#mkdir qc
+#mv ${HU_BAMFILE}.samstat.html qc
 
 # -------------------------------------------------------
 # Variant calling and annotation
 # -------------------------------------------------------
 
-run "java -Xmx100g -jar $GATK -T UnifiedGenotyper -nt 5 -glm BOTH -R $HG19 -dcov 5000 -I $HU_BAMFILE --output_mode EMIT_VARIANTS_ONLY -l OFF -stand_call_conf 1 -L $TARGET_REGIONS > $ALL_VARIANTS"
-
-run "$GATK_TO_GVCF --no-default-filters --min-qd 2.0000 --min-gqx 30.0000 --min-mq 20.0000 < $ALL_VARIANTS > $QUAL_FILTERED"
- 
-run "awk '\$1~/#/ || (\$7~/PASS/ && \$3=NR-64) {print }' $QUAL_FILTERED > $PASS_EXTRACTED"
+#run "java -Xmx100g -jar $GATK -T UnifiedGenotyper -nt 25 -glm BOTH -R $HG19 -dcov 5000 -I $HU_BAMFILE --output_mode EMIT_VARIANTS_ONLY -l OFF -stand_call_conf 1 -L $TARGET_REGIONS > $ALL_VARIANTS"
+#
+#run "$GATK_TO_GVCF --no-default-filters --min-qd 2.0000 --min-gqx 30.0000 --min-mq 20.0000 < $ALL_VARIANTS > $QUAL_FILTERED"
+# 
+#run "awk '\$1~/#/ || (\$7~/PASS/ && \$3=NR-64) {print }' $QUAL_FILTERED > $PASS_EXTRACTED"
 
 run "perl $VEP -i $PASS_EXTRACTED -o $VEP_ANNO --cache --vcf --verbose --everything --fork 5 --total_length --maf_1kg --check_existing --allele_number --check_svs --port 3337 --buffer_size 100000 --dir /12TBLVM/Data/VEP79cache"
 
