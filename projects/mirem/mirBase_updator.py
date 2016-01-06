@@ -28,9 +28,13 @@ with open(sys.argv[2], "r") as ifile:
             line = line.strip().split(delimiter)
             try:
                 if line[mirna_field] in symbol:
-                    line[mirna_field] = symbol[line[mirna_field]]
+                    # Replace current miRNA column with new one
+                    #line[mirna_field] = symbol[line[mirna_field]]
+                    # Add a new column
+                    line.append( symbol[line[mirna_field]] )
+
                     ofile.write(delimiter.join(line)+"\n")
                 else:
                     ofile.write(delimiter.join(line)+"\n")
-                    print(line[mirna_field])
+                    #print(line[mirna_field])
             except: pass        
