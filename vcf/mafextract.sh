@@ -7,21 +7,22 @@
 #   s for SAS_MAF < 0.05
 #   b (default) for EAS_MAF < 0.05 OR SAS_MAF < 0.05
 
-FILTER=11
-filename=${@:${#@}}
-
 # read the options
 TEMP=`getopt -o bes -n "$0" -- "$@"`
 eval set -- "$TEMP"
 
+FILTER=11
 while true; do
     case "$1" in 
         -e) FILTER=10; shift;;
         -s) FILTER=01; shift;;
         -b) FILTER=11; shift;;
-        --) break;
+        --) shift; break;;
     esac
 done
+
+# set input file name
+filename=$1
 
 awk -v FILTER=$FILTER -F'\t' '
 BGEIN {
