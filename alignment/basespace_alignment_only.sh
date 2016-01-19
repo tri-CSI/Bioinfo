@@ -90,10 +90,10 @@ do
 	target_int="${BASE_NAME}_chr${chromo}.intervals"
 	realn_file="${BASE_NAME}_chr${chromo}_realigned.bam"
 	
-	run "java  -Djava.io.tmpdir=\"/tmp\" -Xmx${ram}g -jar $GATK -T RealignerTargetCreator -R $HG_REF -I $HU_BAMFILE -o $target_int -L chr${chromo}"
-		
-	run "java  -Djava.io.tmpdir=\"/tmp\" -Xmx${ram}g -jar $GATK -T IndelRealigner -R $HG_REF -I $HU_BAMFILE -targetIntervals $target_int -L chr${chromo} -o $realn_file"
-	done
+	java -Djava.io.tmpdir="/tmp" -Xmx${ram}g -jar $GATK -T RealignerTargetCreator -R $HG_REF -I $HU_BAMFILE -o $target_int -L chr${chromo} && java  -Djava.io.tmpdir="/tmp" -Xmx${ram}g -jar $GATK -T IndelRealigner -R $HG_REF -I $HU_BAMFILE -targetIntervals $target_int -L chr${chromo} -o $realn_file &
+done
+
+wait
 	
 run "$SAMTOOLS cat ${BASE_NAME}_chr*_realigned.bam $HU_UNALNED -o $HU_BAMFILE && rm $HU_UNALNED ${BASE_NAME}_chr*"
 
