@@ -21,6 +21,8 @@ parser = argparse.ArgumentParser( description="" )
 parser.add_argument( "human", metavar="<human bam file>" )
 parser.add_argument( "mouse", metavar="<mouse bam file>" )
 parser.add_argument( "-s", "--strict", action='store_true', help="Only keep reads that are strictly better in human bam file" )
+parser.add_argument( "-o", "--output", help="Write output file to specified file name rather than standard output" )
+parser.add_argument( "-m", "--extracted", help="Write extracted reads to this file" )
 args = parser.parse_args()
 
 # Total number of reads substracted from human bam
@@ -104,9 +106,15 @@ with open(args.human) as humanf:
 #                    print("Mouse name:", mouse.name, "\tScore:", str(mouse.tscore), "\tCount:", str(mouse.count)) 
 #                    for line in read.lines: print(line)
                     #if input("Continue?") == 'n': print("Total substracted:", count, file = sys.stderr); sys.exit()
+
+            # Write results
             if keep:
+                ofile = (args.output) and open(args.output, 'a') or sys.stdout
                 for line in read.lines:
-                    print(line)           
-                    #pass
+                    print(line, file=ofile)           
+            elif (args.extracted):
+                with open(args.extracted, 'a') as exfile:
+                    for line in read.lines:
+                        print(line, file=exfile)
 
 print("Total substracted:", count, file = sys.stderr)
