@@ -43,34 +43,34 @@ echo "*********************************************************" >> $LOG_FILE
 # -------------------------------------------------------
 # BWA alignment to human:
 # -------------------------------------------------------
-#run "$BWA mem -Mt25 -R '$RG' $HG_REF $STRAND_1 $STRAND_2 | samtools view -@ 25 -Sb - > $HU_BAMFILE"
-#
-#run "$SAMTOOLS sort -@ 25 $HU_BAMFILE $HU_SORTED"
-#
-#run "java -Xmx50g -jar $PICARD MarkDuplicates I=${HU_SORTED}.bam O=$HU_BAMFILE METRICS_FILE=$HU_METRICS_FILE"
-#
-#run "$SAMTOOLS index $HU_BAMFILE"
-#
-#run "$SAMTOOLS view -bf 4 $HU_BAMFILE > $HU_UNALNED"
-#
-#for chromo in M 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y
-#do
-#	target_int="${BASE_NAME}_chr${chromo}.intervals"
-#	realn_file="${BASE_NAME}_chr${chromo}_realigned.bam"
-#	
-#	run "java  -Djava.io.tmpdir=\"/tmp\" -Xmx50g -jar $GATK -T RealignerTargetCreator -R $HG_REF -I $HU_BAMFILE -o $target_int -L chr${chromo}"
-#		
-#	run "java  -Djava.io.tmpdir=\"/tmp\" -Xmx50g -jar $GATK -T IndelRealigner -R $HG_REF -I $HU_BAMFILE -targetIntervals $target_int -L chr${chromo} -o $realn_file"
-#	done
-#	
-#run "$SAMTOOLS cat ${BASE_NAME}_chr*_realigned.bam $HU_UNALNED -o $HU_BAMFILE && rm $HU_UNALNED ${BASE_NAME}_chr*"
-#
-#run "$SAMTOOLS sort -@ 25 $HU_BAMFILE $HU_SORTED"
-#
-#run "java -Xmx50g -jar $PICARD MarkDuplicates I=${HU_SORTED}.bam O=$HU_BAMFILE METRICS_FILE=$HU_METRICS_FILE && rm ${HU_SORTED}.bam $HU_METRICS_FILE"
-#
-#run "$SAMTOOLS index $HU_BAMFILE"
-#
+run "$BWA mem -Mt25 -R '$RG' $HG_REF $STRAND_1 $STRAND_2 | samtools view -@ 25 -Sb - > $HU_BAMFILE"
+
+run "$SAMTOOLS sort -@ 25 $HU_BAMFILE $HU_SORTED"
+
+run "java -Xmx50g -jar $PICARD MarkDuplicates I=${HU_SORTED}.bam O=$HU_BAMFILE METRICS_FILE=$HU_METRICS_FILE"
+
+run "$SAMTOOLS index $HU_BAMFILE"
+
+run "$SAMTOOLS view -bf 4 $HU_BAMFILE > $HU_UNALNED"
+
+for chromo in M 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y
+do
+	target_int="${BASE_NAME}_chr${chromo}.intervals"
+	realn_file="${BASE_NAME}_chr${chromo}_realigned.bam"
+	
+	run "java  -Djava.io.tmpdir=\"/tmp\" -Xmx50g -jar $GATK -T RealignerTargetCreator -R $HG_REF -I $HU_BAMFILE -o $target_int -L chr${chromo}"
+		
+	run "java  -Djava.io.tmpdir=\"/tmp\" -Xmx50g -jar $GATK -T IndelRealigner -R $HG_REF -I $HU_BAMFILE -targetIntervals $target_int -L chr${chromo} -o $realn_file"
+	done
+	
+run "$SAMTOOLS cat ${BASE_NAME}_chr*_realigned.bam $HU_UNALNED -o $HU_BAMFILE && rm $HU_UNALNED ${BASE_NAME}_chr*"
+
+run "$SAMTOOLS sort -@ 25 $HU_BAMFILE $HU_SORTED"
+
+run "java -Xmx50g -jar $PICARD MarkDuplicates I=${HU_SORTED}.bam O=$HU_BAMFILE METRICS_FILE=$HU_METRICS_FILE && rm ${HU_SORTED}.bam $HU_METRICS_FILE"
+
+run "$SAMTOOLS index $HU_BAMFILE"
+
 ## ------------ QC --------------
 #run "$SAMSTAT $HU_BAMFILE"
 #
