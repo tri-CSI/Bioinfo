@@ -2,10 +2,15 @@
 
 # Usage:
 #   ./mafextract.sh  [-e|s|b] annotated_varlist.txt > filtered_varlist.txt
+#
 # Flags:
 #   e for EAS_MAF < 0.05
 #   s for SAS_MAF < 0.05
 #   b (default) for EAS_MAF < 0.05 OR SAS_MAF < 0.05
+# 
+# Columns (tab-delimited)
+#   EAS_MAF: second last column
+#   SAS_MAF: last column
 
 # read the options
 TEMP=`getopt -o bes -n "$0" -- "$@"`
@@ -31,8 +36,8 @@ BGEIN {
 }
 
 {
-    EAS = $67;
-    SAS = $68;
+    EAS = $(NF-1);
+    SAS = $NF;
     TO_PRINT = 0;
     
     if ( $1~/^#/ ) TO_PRINT = 1;
