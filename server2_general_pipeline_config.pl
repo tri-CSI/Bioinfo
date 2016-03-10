@@ -2,7 +2,8 @@
 # Tools
 
 $BWA = '/usr/bin/bwa';
-$SAMTOOLS = '/home/biotools/samtools-1.2/samtools';
+$SAMTOOLS = '/home/biotools/samtools-1.3/samtools';
+$BCFTOOLS = '/home/biotools/bcftools-1.3/bcftools';
 $SAMSTAT = '/usr/local/bin/samstat';
 $PICARD = '/home/biotools/picard-tools-1.141/picard.jar';
 $GATK = '/home/biotools/GATK-3.5/GenomeAnalysisTK.jar';
@@ -13,10 +14,12 @@ $MAPQLASSIFY = '/home/biotools/tri-scripts/mapqlassify.py';
 $VEP = '/home/biotools/ensembl-tools-release-83/scripts/variant_effect_predictor/variant_effect_predictor.pl';
 $MAF_SELECTOR = '/home/biotools/tri-scripts/select_asn_maf.awk';
 $MAF_EXTRACTOR = '/home/biotools/tri-scripts/mafextract.sh';
+$SELECT_TRANSCRIPT = '/home/minhtri/scripts/vcf/VEPselectTranscript.py';
 
 # Databases;
 
 $HG_REF = '/home/sharedResources/hg19-2/hg19_1toM/hg19_1toM.fa';
+$HG19_MTOY = '/home/sharedResources/hg19-2/hg19_MtoY/hg19_MtoY.fa';
 $MSE_REF = '/home/minhtri/BAYXENOHH/Ref/NOD_ShiLtJ.1toM.fa';
 $HG_ALL = '/home/sharedResources/hg19-2/hg19_all/hg19_all.fa';
 $TARGET_REGIONS = '/home/sharedResources/hg19-2/NexteraRapidCapture_Exome_TargetedRegions_v1.2Used.bed';
