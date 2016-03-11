@@ -1,3 +1,8 @@
-abcdefjjjghkdefjjjghkooop c[def[j]{3}ghk]{2} cdefjjjghkdefjjjghk
-abcdefjjjghkdefjjjghkooop c[defj]{3}ghk]{2} cdefjjjghkdefjjjghk
-AABBCCC 
+abcdefjjjghkdefjjjghkooop	cdefjjjg	cdefjjjg
+abcdefjjjghkdefjjjghkooop	c[def[j]{3}ghk]{2}	cdefjjjghkdefjjjghk
+abcdefjjjghkdefjjjghkooop	c[defj]{3}ghk]{2}	ERROR
+AABBCCC	[A]{2}[B]{2}[C]{2}	AABBCC
+AABBCCC	[a]{2}[b]{2}[b]{2}	None
+defdefabcabcabc	abc	abc
+my[name]is{Something}	me\]is\{So	me]is{So
+defdefab cabcabdefc	abc	abc

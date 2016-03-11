@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <cstring>
 #include "simpleRegex.h"
@@ -6,21 +7,33 @@
 using namespace std;
 
 int main() {
-    std::string str_to_search, regex, answer, myans;
-    unsigned char pstr[1000], match[1000];
+    std::string one_line, str, mch, answer, myans;
+    unsigned char * pstr;
+    unsigned char * match;
     
-    while (true) {
-        cin >> str_to_search;
-        cin >> regex;
-        cin >> answer;
-        std::strcpy( (char*) pstr, str_to_search.c_str() );
-        std::strcpy( (char*) match, regex.c_str() );
+    while ( getline( cin, one_line ) )
+    {
+        istringstream is( one_line );
+        
+        getline( is, str, '\t');
+        getline( is, mch, '\t');
+        getline( is, answer);
+        
+        int lstr = str.length(), lmch = mch.length();
+        pstr = new unsigned char [lstr + 1];
+        strcpy( (char *)pstr, str.c_str() );
+        pstr[lstr] = '\0';
+        match = new unsigned char [lmch + 1];
+        strcpy( (char *)match, mch.c_str() );
+        match[lmch] = '\0';
+        
+        if (answer == "None") answer = "";
         myans = PatternSearch( pstr, match ); //(const unsigned char* pStr, const unsigned char* pMatch)
-            
-        if (myans == answer) 
+        if ( myans == answer ) 
             cout << "PASS: " << myans << endl;
-        else 
+        else
             cout << "FAIL: " << myans << endl;
-        break;
+        delete [] pstr;
+        delete [] match;
     }
 }
