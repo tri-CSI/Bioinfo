@@ -17,22 +17,20 @@ int main() {
         
         getline( is, str, '\t');
         getline( is, mch, '\t');
-        getline( is, answer);
+        getline( is, answer, '\r');
         
         int lstr = str.length(), lmch = mch.length();
         pstr = new unsigned char [lstr + 1];
         strcpy( (char *)pstr, str.c_str() );
-        pstr[lstr] = '\0';
         match = new unsigned char [lmch + 1];
         strcpy( (char *)match, mch.c_str() );
-        match[lmch] = '\0';
         
         if (answer == "None") answer = "";
         myans = PatternSearch( pstr, match ); //(const unsigned char* pStr, const unsigned char* pMatch)
         if ( myans == answer ) 
-            cout << "PASS: " << myans << endl;
+            cout << "PASS: " << myans << " " << myans.length() << ", " << answer  << " " << answer.length() << endl;
         else
-            cout << "FAIL: " << myans << endl;
+            cout << "FAIL: " << myans << " " << myans.length() << ", " << answer  << " " << answer.length() << endl;
         delete [] pstr;
         delete [] match;
     }

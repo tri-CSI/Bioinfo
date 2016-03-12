@@ -1,3 +1,5 @@
+abcdefghiabcdefdefghi	abc[def]{2}ghi	abcdefdefghi
+abcdefghighighijkldefghighighijklmno	abc[def[ghi]{3}jkl]{2}mno	abcdefghighighijkldefghighighijklmno
 abcdefjjjghkdefjjjghkooop	cdefjjjg	cdefjjjg
 abcdefjjjghkdefjjjghkooop	c[def[j]{3}ghk]{2}	cdefjjjghkdefjjjghk
 abcdefjjjghkdefjjjghkooop	c[defj]{3}ghk]{2}	ERROR

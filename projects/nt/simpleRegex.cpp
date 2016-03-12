@@ -1,9 +1,17 @@
+/* NUMTECH C++ DEVELOPER ASSESSMENT TEST
+ * Date: 12/3/2016
+ * Author: TRAN MINH TRI
+ * Email: tri.tran@u.nus.edu
+ * Website: www.code4pho.com
+ */
+
 #include <string>
 #define ERROR "ERROR"
 
-// Function: Interpret repeating block 
-// In: remaining regex expression when a '[' has been encountered
+// Function: Interpret repeating block
+// In: pointer to remaining regex expression after '['
 // Out: repeated block without metacharacters
+//      pointer now point to the next character after the block
 // Return ERROR if metacharacters are used wrongly
 std::string RepeatString( const unsigned char ** remaining )
 {
@@ -13,6 +21,8 @@ std::string RepeatString( const unsigned char ** remaining )
     bool endRepeat = false;
     int repeat_num = 0;
 
+    // Search for matching ']' 
+    // if a nested block is found, recursively call the function at that position
     while ( **remaining && not endRepeat ) {
         unsigned char current = *(*remaining)++;
 
@@ -43,10 +53,10 @@ std::string RepeatString( const unsigned char ** remaining )
     // Next char must be '{'
     if (*(*remaining)++ != '{') return ERROR;
 
-    // Parse digits of repeat count
+    // Parse digits of repeat count, only non-negative integers
     while ( **remaining != '}') {
         unsigned char current = *(*remaining)++;
-        if ( current < '0' && current > '9' ) return ERROR;
+        if ( current < '0' || current > '9' ) return ERROR;
         repeat_num = repeat_num * 10 + current - '0';
     }
 
@@ -59,7 +69,7 @@ std::string RepeatString( const unsigned char ** remaining )
     
     // Repeat the string 
     // This also accept 0 repeat, which is interesting
-    // But why not!
+    // Negative repeats are ERROR though (fails the previous parsing)
     while (repeat_num--) result += repeat_str;
     
     return result;
@@ -74,11 +84,13 @@ std::string InterpretPattern( const unsigned char * pMatch )
     std::string result = "";
     std::string repBlock = "";
 
-    // add all literal characters until a repeat block [xxx]{d} if found
+    // add all literal characters until a repeat block [xxx]{d} is found
     while ( *pMatch ) {
         unsigned char current = *pMatch++;
         switch (current) {
             case '[':
+                // The RepeatString function increment the pointer the next character after the block 
+                // and return the repeated block as string 
                 repBlock = RepeatString( &pMatch );
                 if (repBlock == ERROR) return ERROR;
                 else result += repBlock;
