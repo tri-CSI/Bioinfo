@@ -7,11 +7,6 @@
 # Date: 07 Jan 2016
 
 # Usage:
-#     1. Copy xenograft.config file to run folder
-#     2. Open xenograft.config, change paths to programs (BWA, samtools, GATK...)
-#     3. Make sure fastq files have the following format: CASE_NAME-metainfo.fastq.gz or .fastq; CASE_NAME will be used to name output files.
-#     4. Run pipeline by typing 
-#           bash script_name.sh <forward_strand_fastq> <reverse_strand_fastq>
 #     5. A subfolder to run directory will be made, named CASE_NAME
 
 # Set constants
@@ -40,7 +35,7 @@ while true; do
 done
 
 # Load necessary tools and functions
-source /home/biotools/tri-scripts/pipeline_general.config
+$STRELKA = "/12TBLVM/biotools/strelka-1.0.13/"
 
 # check input fastq names
 if [ $# -ne 1 ]; then
@@ -85,6 +80,7 @@ do
     cd $ANA_FD
     run "make -j $nproc"
     cd $curdir
+    
     cat $ANA_FD/results/passed.somatic.snvs.vcf <(grep -v "^#" $ANA_FD/results/passed.somatic.indels.vcf) > $outdir/${caseid}.strelka.passed.vcf 
     cat $ANA_FD/results/all.somatic.snvs.vcf <(grep -v "^#" $ANA_FD/results/all.somatic.indels.vcf) > $outdir/${caseid}.strelka.all.vcf 
 done < $CASELIST

@@ -1,37 +1,53 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use Getopt::Long;
 
 my $ram = 20;
 my $ncore = 25;
+my $config = '/home/biotools/tri-scripts/pipeline_general_config.pl';
+my $FOLDER = ".";
+our $logfile = 'log.txt';
 
-require '/home/biotools/tri-scripts/pipeline_general_config.pl';
-our ($SAMTOOLS, $GATK, $HG_REF, $HG_ALL, $VEP, $MAF_SELECTOR, $MAF_EXTRACTOR, $VEP_CACHE);
+# Get command line arguments
+
+GetOptions('conf=s' => \$config,
+            'log=s' => \$logfile,
+            'mem=s' => \$ram,
+         'thread=s' => \$ncore,
+      'outfolder=s' => \$FOLDER);
+$FOLDER .= "/";
+
+require $config;
+
+our ($SAMTOOLS, $GATK, $HG_REF, $HG_ALL, $VEP, $MAF_SELECTOR, $MAF_EXTRACTOR, $VEP_STRANDSELECTOR, $VEP_FORMATTOR, $VEP_CACHE);
 our ($HAPMAP, $OMNI, $SNP1000, $DBSNP, $MILLS, $INDEL1000);
 
 my $file_list = $ARGV[0];
-our $logfile = $ARGV[1];
 open FLIST, $file_list;
 chomp (my @GVCFS = <FLIST>);
+close (FLIST);
 
 my $gvcf_args = "";
 for my $gvcf ( @GVCFS ) {
     $gvcf_args .= " -V $gvcf ";
 }
 
-my $joint_vcf = "joint.vcf";
-my $snp_recal = "vqsr.snp.recal";
-my $snp_tranches = "vqsr.snp.trenches";
-my $recalSnp = "recalibrated_snps_raw_indels.vcf";
-my $indel_recal = "vqsr.indel.recal";
-my $indel_tranches = "vqsr.indel.trenches";
-my $recal = "recalibrated.vcf";
-my $recalPostCGP = "recalibrated.postCGP.vcf";
-my $recalGfiltered = "recalibrated.filtered.vcf";
+my $joint_vcf = $FOLDER . "joint.vcf";
+my $snp_recal = $FOLDER . "vqsr.snp.recal";
+my $snp_tranches = $FOLDER . "vqsr.snp.trenches";
+my $recalSnp = $FOLDER . "recalibrated_snps_raw_indels.vcf";
+my $indel_recal = $FOLDER . "vqsr.indel.recal";
+my $indel_tranches = $FOLDER . "vqsr.indel.trenches";
+my $recal = $FOLDER . "recalibrated.vcf";
+my $recalPostCGP = $FOLDER . "recalibrated.postCGP.vcf";
+my $recalGfiltered = $FOLDER . "recalibrated.filtered.vcf";
 my @cases;
 my $suf_filtered = ".filtered.vcf";
 my $suf_annotated = ".annotated.vcf";
-my $suf_asnmaf = ".asnmaf.vcf";
+my $suf_choosestrand = ".stranded.txt";
+my $suf_formatted = ".formatted.txt";
+my $suf_asnmaf = ".asnmaf.txt";
 
 # Pipeline starts here
 
@@ -97,7 +113,7 @@ system ( printJobTitle("java -Djava.io.tmpdir=\"/tmp\" -Xmx$ram"
 );
 
 printJobTitle("Extract PASS variants for each case");
-open( ALLVAR, "$recal" );
+open( ALLVAR, "$joint_vcf" );
 
 while ( my $line = <ALLVAR>) {
     if ( $line =~ /^#CHROM/ ) {
@@ -111,8 +127,7 @@ close ( ALLVAR );
 
 my $forks = 0;
 for my $case ( @cases ) {
-    my $casevar = $case . $suf_filtered;
-    push ( @varfiles, $casevar );
+    my $casevar = $FOLDER . $case . $suf_filtered;
     my $pid = fork;
 
     if (not defined $pid) {
@@ -121,7 +136,7 @@ for my $case ( @cases ) {
     }
         
     my $command = "java -Djava.io.tmpdir=\"/tmp\" -Xmx$ram"
-        . "g -jar $GATK -T SelectVariants -R $HG_ALL -V $recal "
+        . "g -jar $GATK -T SelectVariants -R $HG_ALL -V $joint_vcf "
         . "-o $casevar -sn $case -env -ef";
 
     if ($pid) {
@@ -139,16 +154,23 @@ for (1 .. $forks) {
 
 printJobTitle("Variant Effect Predictor (VEP)");
 for my $case (@cases) {
-    my $var_filt = $case . $suf_filtered;
-    my $var_anno = $case . $suf_annotated;
-    my $var_asn = $case . $suf_asnmaf;
+    my $var_filt = $FOLDER . $case . $suf_filtered;
+    my $var_anno = $FOLDER . $case . $suf_annotated;
+    my $var_strd = $FOLDER . $case . $suf_choosestrand;
+    my $var_fmt = $FOLDER . $case . $suf_formatted;
+    my $var_asn = $FOLDER . $case . $suf_asnmaf;
+    
     system( printJobTitle("perl $VEP "
         . "-i $var_filt -o $var_anno "
         . "--cache --vcf --fork $ncore "
-        . "--total_length --maf_1kg --no_stats "
+        . "--ccds --canonical --total_length --maf_1kg --no_stats "
         . "--buffer_size 100000 --force " 
-        . "--pick --dir $VEP_CACHE --port 3337") ); 
-    system( printJobTitle("$MAF_SELECTOR $var_anno | $MAF_EXTRACTOR -c 11 > $var_asn") );
+        . "--hgvs --dir $VEP_CACHE --port 3337") ); 
+    
+    system( printJobTitle("$VEP_STRANDSELECTOR $var_anno $var_strd") );
+    system( printJobTitle("$VEP_FORMATTOR $var_strd $var_fmt") );
+    
+    system( printJobTitle("$MAF_EXTRACTOR $var_fmt > $var_asn") );
 }
 
 printJobTitle("Finished processing $file_list");

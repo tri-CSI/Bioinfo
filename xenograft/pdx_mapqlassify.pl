@@ -6,7 +6,8 @@ use Getopt::Long;
 my $ram = 20;
 my $ncore = 25;
 my $config = '/home/biotools/tri-scripts/pipeline_general_config.pl';
-my $BASE_NAME;
+my ($BASE_NAME, $GVCF_LIST);
+my $FOLDER = '';
 our $logfile = 'log.txt';
 
 # Get command line arguments
@@ -16,6 +17,7 @@ GetOptions('conf=s' => \$config,
             'mem=s' => \$ram,
          'thread=s' => \$ncore,
        'gvcflist=s' => \$GVCF_LIST,
+      'outfolder=s' => \$FOLDER,
          'prefix=s' => \$BASE_NAME);
 
 if (not defined $BASE_NAME)
@@ -38,25 +40,31 @@ my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime();
 my $DTST = sprintf("%04d%02d%02d", $year, $mon, $mday);
 my $RG = "\@RG\\tID:0\\tLB:Nextera_Rapid_Capture_Enrichment\\tPL:ILLUMINA-NextSeq500\\tPU:\@NS500768\\tSM:$BASE_NAME\\tCN:CTRAD-CSI_Singapore\\tDS:NIL\\tDT:$DTST";
 
+$BASE_NAME = $FOLDER . $BASE_NAME;
+
 my $HU_BAMFILE = $BASE_NAME . ".human.bam";
+my $HU_BAMFILE_IDX = $BASE_NAME . ".human.bam.bai";
 my $HU_SORTED = $BASE_NAME . ".human.sorted.bam";
 my $HU_METRICS_FILE = $BASE_NAME . ".human.metric";
 my $HU_UNALNED = $BASE_NAME . ".human.unaligned.bam";
 my $HU_REALGN = $BASE_NAME . ".human.realigned.bam";
 my $HU_REC_TABLE = $BASE_NAME . ".human.recal.table";
 my $HU_RECAL = $BASE_NAME . ".human.recalibrated.bam";
+my $HU_RECAL_IDX = $BASE_NAME . ".human.recalibrated.bai";
 my $HU_NAMESORTED = $BASE_NAME . ".human.namesorted.bam";
 
 my $HU_SUBTRACTED_SAM = $BASE_NAME . ".human.subtracted.sam";
 my $HU_SUBTRACTED_BAM = $BASE_NAME . ".human.subtracted.bam";
 
 my $MSE_BAMFILE = $BASE_NAME . ".mouse.bam";
+my $MSE_BAMFILE_IDX = $BASE_NAME . ".mouse.bam.bai";
 my $MSE_SORTED = $BASE_NAME . ".mouse.sorted.bam";
 my $MSE_METRICS_FILE = $BASE_NAME . ".mouse.metric";
 my $MSE_UNALNED = $BASE_NAME . ".mouse.unaligned.bam";
 my $MSE_REALGN = $BASE_NAME . ".mouse.realigned.bam";
 my $MSE_REC_TABLE = $BASE_NAME . ".mouse.recal.table";
 my $MSE_RECAL = $BASE_NAME . ".mouse.recalibrated.bam";
+my $MSE_RECAL_IDX = $BASE_NAME . ".mouse.recalibrated.bai";
 my $MSE_NAMESORTED = $BASE_NAME . ".mouse.namesorted.bam";
 
 my $gvcf = $BASE_NAME . ".g.vcf";
@@ -144,6 +152,8 @@ system( printJobTitle("$SAMTOOLS sort -@ $ncore -nT tmp $HU_RECAL -o $HU_NAMESOR
 
 system( printJobTitle("$SAMTOOLS view -H $HU_RECAL > $HU_SUBTRACTED_SAM") );
 
+system( printJobTitle("rm $HU_BAMFILE $HU_BAMFILE_IDX $HU_RECAL $HU_RECAL_IDX $HU_REC_TABLE") );
+
 ###########################################
 # Align to MOUSE genome
 ###########################################
@@ -210,6 +220,8 @@ system( printJobTitle("$SAMTOOLS index $MSE_BAMFILE") );
 
 printJobTitle("Sort by name for Mapqlassify");
 system( printJobTitle("$SAMTOOLS sort -@ $ncore -nT tmp $MSE_BAMFILE -o $MSE_NAMESORTED") );
+
+system( printJobTitle("rm $MSE_BAMFILE $MSE_BAMFILE_IDX $MSE_METRICS_FILE $MSE_SORTED") );
 
 ###########################################
 # Run MAPQLASSIFY
