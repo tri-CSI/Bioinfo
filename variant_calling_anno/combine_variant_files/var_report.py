@@ -2,6 +2,7 @@
 # version 0.0.1
 # Author: Tran Minh Tri
 # Organization: CSI - CTRAD
+# Combine all annotated files in the same folder
 
 """
 Usage:

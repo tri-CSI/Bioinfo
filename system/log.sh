@@ -1,4 +1,12 @@
 #!/bin/bash
+
+# Author: Tran Minh Tri
+# A simple script to log processes
+# Usage:
+#    source log.sh
+#    command to be logged
+#    log "!!" $? [File created]
+
 set -o history -o histexpand
 
 log ()
@@ -12,5 +20,6 @@ else
 fi
 }
 
+# Test
 ls -lh
-log "!!" $? sddd
+log "!!" $? None

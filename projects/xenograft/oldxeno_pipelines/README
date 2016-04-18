@@ -1,7 +1,16 @@
-Pipeline for xenograft analysis
+Pipelines for xenograft analysis
 version 1.0.1
 Developed by Tran Minh Tri
 Date: 22 October 2015
+
+These are older versions
+Use the new pipeline of Mapqlassify in Perl instead
+
+Contents:
+    1. alnxeno - Pipeline 1 (Rossello)
+    2. memxeno - Pipeline 2 (Rossello but aln changed to mem)
+    3. loxeno - LiftOver pipeline
+    4. mapqmem - Mapqlassify pipeline
 
 Usage:
     1. Copy loxeno.config file to run folder

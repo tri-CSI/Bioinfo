@@ -1,5 +1,6 @@
 #!/usr/bin/python2
-
+# Author: Tran Minh Tri
+# Combine 2 lists of variants (HH and HO) and label where each variant come from (HO, HH or both)
 
 import argparse
 import os

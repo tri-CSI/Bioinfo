@@ -1,7 +1,7 @@
 #!/bin/bash
 set -o history -o histexpand
 
-# Pipeline for analysing xenograft data starting at alignment 
+# Pipeline for analysing data starting at alignment 
 # step up to variant calling, excluding annotation
 # Developed by Tran Minh Tri
 # Date: 22 Apr 2015
