@@ -1,0 +1,5 @@
+Scripts for miREM projects
+
+CORNA.1.4.tar.gz is not an official release, code was changed by me to be compliance with new Ensembl database
+
+See database_build_steps.txt for details on how to use the various scripts
