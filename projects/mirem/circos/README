@@ -1,0 +1,9 @@
+* How to create circos plot for miREM databases *
+
+1/ Data:
+
+2/ Build:
+	From terminal, type: 
+		> circos
+	Important:
+		+ Do not change file names of conf files
