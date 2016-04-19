@@ -1,0 +1,7 @@
+Scripts and pipelines related to Xenograft mouse subtraction study
+
+Most recent ones are 
+    1. pdx_mapqlassify.pl and 
+    2. identify_mouse.py, which is essentially mapqlassify.py
+
+Please refer to config_files/ folder for variables declared in pdx_mapqlassify.pl 
