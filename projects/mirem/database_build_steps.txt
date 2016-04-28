@@ -1,0 +1,109 @@
+I.  Update human mapping: 
+http://biomart.genenames.org/martform/#!/default/HGNC?datasets=hgnc_gene_mart 
+Download HGNC  biomart database: select the following attributes and download 
+-   Status: Approved
+-   Attributes:
+o   HGNC data: Approved symbol, Previous symbol
+o   Gene resources: Ensembl Gene ID, UCSC ID
+o   Nucleotide resources: RefSeq accession
+awk -F"\t" 'NR>1 {for (i=1;i<=5;i++) {if ($i!~/^[ ]*$/) print $i"\t"$1;}}' result.txt | sort -u > human_gene_mapping.txt
+Update databases to new gene names:
+symbols2hgnc_v1_0.py human_gene_mapping.txt mirdb_human_conserved.txt mirdb_human_conserved_updated.txt
+
+II. Update mouse mapping:
+
+Cat with ref file from MGI (step VI)
+
+Mouse:
+-   Ensembl Gene ID
+-   Associated Gene Name
+-   UCSC ID
+-   RefSeq DNA ID [e.g. NM_203373]
+-   RefSeq mRNA [e.g. NM_001195597]
+awk -F"\t" 'BEGIN{OFS="\t";} NR>1 {for (i=1;i<=5;i++) {if ($i!~/^[ ]*$/) print $i,$2;}}' mouse_mart_export.txt | sort | uniq > mouse_gene_mapping.txt
+Download gene symbols with previous versions from ftp://ftp.informatics.jax.org/pub/reports/MRK_List1.rpt 
+Extract mapping in the form of 
+    Symbol(old/new) Symbol(new)
+cut -f 7,12 MRK_List1.rpt | awk -F"\t" 'BEGIN{OFS="\t";} NR >1 {n=split($2,a, "|"); print $1,$1; for (i=1;i<=n;i++) {if (a[i]!~/[ ]+/) print a[i],$1;}}' | sort | uniq > mouse_oldnew_mapping.txt
+Update mapping file to support older gene names
+cat mouse_gene_mapping.txt mouse _oldnew_mapping.txt | sort | uniq > mouse _gene_mapping_new.txt
+Update databases to new gene names:
+symbols2hgnc_v1_0.py mouse_oldnew_mapping.txt mirdb_human_conserved.txt mirdb_human_conserved_updatedcd.txt
+
+III.    Update each database:
+1.  Pictar
+-   Download from http://dorina.mdc-berlin.de/regulators
+-   Get gene names from gencode.gtf
+-   ./annotateBedgraph.py gencode.vM6.annotation.gtf Archives/pictar_mirna_up2chickenCons_mm9.bed pictar_mmu_hgnc2mirnaGrp.txt
+-   ./pictar_match.pl pictar_mmu_hgnc2mirnaGrp.txt mmu | sort | uniq > pictar_mmu_hgnc2mirna.txt
+-   Update to mirBase v21 from v19 (Aug 2012) 
+-   mirBase_updator.py hsa-miRBase_Tracker_compare_19_21.csv pictar_gene2mirna.txt pictar_gene2mirna_v21.txt
+
+2.  Target Scan
+-   Download conserved and nonconserved data v7 for human & v6.2 for Mouse
+-   Extract Gene and miRna Family
+-   zcat Nonconserved_Family_Info.txt.zip | awk -F"\t" 'BEGIN{OFS="\t"} NR>1 && $5~/^9606$/ && $3!~/^0$/ {print $3, $1}' | sort | uniq > targetscan_human_nonconserved_symbol2family.txt
+-   Convert miRna family into miRna list (1 miRna per entry) 
+-   targetScan_fam2miRna.py miR_Family_Info.txt targetscan_mouse_conserved_symbol2family.txt targetscan_mouse_conserved_symbol2mirna.txt 10090
+-   Human: already in mirBase v21, mouse: update from v17 (April 2011)
+
+3.  miRanda 
+-   Download conserved and nonconserved data Aug 2010
+-   Extract Gene symbol and miRna
+-   zcat /Archives/mouse_predictions_S_0_aug2010.txt.gz | awk -F "\t" 'BEGIN{OFS="\t";} NR>1 {print $4,$2 }' | sort | uniq > miRanda_mmu_N_gene2mirna.txt
+-   Update to mirBase v21 from mirBase v15 (April 2010) 
+-   mirBase_updator.py hsa-miRBase_Tracker_compare_15_21.csv miranda_gene2mirna.txt miranda_gene2mirna_v21.txt
+
+4.  Diana
+-   Download micro T CDS v7
+-   Extract Gene symbol (embedded) and miRna
+-   zcat microT_CDS_data.tar.gz | awk -F "[,()]" 'BEGIN{OFS="\t";} NR>1 && $5~/^mmu/ {print $3, $5}' | sort | uniq > diana_mouse_gene2miRna.txt
+-   Update to mirBase v21 from v18 (November 2011) 
+-   mirBase_updator.py hsa-miRBase_Tracker_compare_11.0_21.csv PITA_gene2mirna.txt PITA_gene2mirna_updated.txt
+
+5.  miRdb
+-   Download v5
+-   Extract Gene and miRna info of specific species (hsa/mmu) 
+-   zcat miRDB_v5.0_prediction_result.txt.gz | awk -F"\t" 'BEGIN{OFS="\t";} $1~/mmu/ {print $2,$1}' > mirdb_mmu_ncbi2hgnc.txt
+-   Convert from Gene ID to Gene Symbol using NCBI’s gene2accession.gz 
+-   Mouse: 10090, human: 9606
+-   zcat gene2accession.gz | awk -F"\t" 'BEGIN{OFS="\t";} NR>1 && $1~/^9606/ && $4!~/^-/ {split($4,a,"."); print a[1], $16}' |sort|uniq > human_ncbi_to_hgnc.txt
+-   ncbi2hgnc_v1_0.py human_ncbi_to_hgnc.txt mirdb_human_ncbi2mirna.txt mirdb_human.txt  sort | uniq
+-   Already in mirBase v21 
+
+6.  PITA
+-   Download Targets catalog from http://genie.weizmann.ac.il/pubs/mir07/mir07_data.html 
+-   Extract Gene and miRna info of specific species (hsa/mmu) 
+-   zcat PITA_targets_hg18_0_0_ALL.tab.gz | sed '1d'| awk '{print $2"\t"$3}' > PITA_gene2mirna_hg18.txt
+-   Update from mirBase 11.0 to mirbase 21
+-   mirBase_updator.py mmu-miRBase_Tracker_compare_11.0_21.csv PITA_gene2mirna_mm9.txt PITA_gene2mirna_mm9_v21.txt
+-   Update to new gene symbol
+-   symbols2hgnc_v1_0.py human_gene_mapping.txt PITA_gene2mirna_hg18_v21.txt PITA_gene2mirna_hgnc_updated.txt
+-   Sort and remove duplicate
+-   sort –u PITA_gene2mirna_hgnc_updated.txt > PITA_human_gene2mirna.txt
+
+7.  RNA22
+-   Download from https://cm.jefferson.edu/data-tools-downloads/rna22-full-sets-of-predictions/ 
+-   Extract Gene and miRna info of specific species (hsa/mmu) – only take p-value < 0.05
+-   zcat HomoSapiens_mRNA_ENSEMBL78.tar.gz | sed -rn 's/.*(hsa_..._[0-9][^\s]*\s+E[^_]+.*)/\1/p' | awk '$16<0.05 {split($2,a,"_"); print a[1]"\t"$1}' | sort -u > RNA22_human_ensg2mirna.txt
+-   Convert from Ensembl ID to Gene Symbol 
+-   symbols2hgnc_v1_0.py human_gene_mapping.txt RNA22_human_ensg2mirna.txt RNA22_human_human2mirna.txt > unmapped_human.txt
+-   sort -u RNA22_human_human2mirna.txt > RNA22_human_gene2miRna.txt
+-   Change _ to - for all miRNA
+-   sed 's/_/-/g' RNA22_human_gene2miRna.txt > RNA22_human_gene2miRna_updated.txt 
+-   Already in mirBase v21 for human, v18 for mouse
+-   mirBase_updator.py mmu-miRBase_Tracker_compare_18_21.csv RNA22_mouse_gene2miRna_updated.txt RNA22_mouse_gene2miRna_v21.txt
+
+IV. To build database, run the following script: ./combine_v1_1.py   <1.TargetScan_conserved>   <2.TargetScan_non-conserved>   <3.Diana>   <4.mirDB>   <5.Miranda_conserved>   <6.Miranda_non-conserved>   <7.Pictar>  <8.PITA>  <9.RNA22>    -p human
+
+V.  Generate mirna_genes files:
+In each intersect folder:
+for db_to_use in *.txt; do cut -f 3 $db_to_use | sort | uniq -c | sort -k 1,1nr | awk '{print $1"\t"$2}' > ${db_to_use}.genes_mirna; done
+
+VI. Generate mapping table
+Download hairpin.fa.gz and mature.fa.gz from http://www.mirbase.org/ftp.shtml 
+Accession no; name; DB1|DB2…;mature_sequence
+for db_to_use in *.txt; do cut -f2 $db_to_use | sort  -u | sed '/^$/d'  > justmrna.${db_to_use}; done
+
+VII.    Make Sqlite database
+Python scripts
